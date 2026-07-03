@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Symptom Chart — Triage Assistant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #EEF1EC;
+    --surface: #FFFFFF;
+    --line: #D7DDD5;
+    --ink: #1C2B27;
+    --ink-soft: #5C6B65;
+    --pine: #2F6B5E;
+    --pine-dim: #E4EDE9;
+    --clay: #A15C2C;
+    --clay-dim: #F5E9DE;
+    --track: #E2E6DF;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Inter',sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:640px;
+    margin:0 auto;
+    padding:48px 24px 80px;
+  }
+  header{
+    margin-bottom:32px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:20px;
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    text-transform:uppercase;
+    color:var(--pine);
+    margin:0 0 8px;
+  }
+  h1{
+    font-family:'Lora',serif;
+    font-weight:600;
+    font-size:28px;
+    margin:0 0 8px;
+    letter-spacing:-0.01em;
+  }
+  .sub{
+    color:var(--ink-soft);
+    font-size:14px;
+    line-height:1.5;
+    margin:0;
+    max-width:52ch;
+  }
+  .notice{
+    background:var(--clay-dim);
+    border:1px solid #E3C7AC;
+    border-left:3px solid var(--clay);
+    border-radius:4px;
+    padding:14px 16px;
+    font-size:13px;
+    line-height:1.6;
+    color:#5C3A1E;
+    margin:20px 0 32px;
+  }
+  .notice strong{color:var(--clay);}
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:24px;
+    margin-bottom:20px;
+  }
+  .card h2{
+    font-family:'Lora',serif;
+    font-size:16px;
+    font-weight:600;
+    margin:0 0 4px;
+  }
+  .card .hint{
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 16px;
+  }
+  input[type="text"]{
+    width:100%;
+    padding:11px 14px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-size:14px;
+    background:var(--bg);
+    color:var(--ink);
+  }
+  input[type="text"]:focus{
+    outline:2px solid var(--pine);
+    outline-offset:1px;
+    background:var(--surface);
+  }
+  .suggestions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-top:10px;
+    max-height:130px;
+    overflow-y:auto;
+  }
+  .chip{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11.5px;
+    padding:5px 10px;
+    border:1px solid var(--line);
+    border-radius:20px;
+    background:var(--bg);
+    cursor:pointer;
+    color:var(--ink-soft);
+    transition:all .12s ease;
+  }
+  .chip:hover{border-color:var(--pine);color:var(--pine);}
+  .selected{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:16px;
+    min-height:20px;
+  }
+  .tag{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:12px;
+    background:var(--pine-dim);
+    color:var(--pine);
+    border:1px solid #BEDBD1;
+    border-radius:20px;
+    padding:6px 8px 6px 12px;
+    display:flex;
+    align-items:center;
+    gap:6px;
+  }
+  .tag button{
+    background:none;
+    border:none;
+    color:var(--pine);
+    cursor:pointer;
+    font-size:14px;
+    line-height:1;
+    padding:2px;
+    opacity:0.6;
+  }
+  .tag button:hover{opacity:1;}
+  .empty-state{
+    font-size:12.5px;
+    color:var(--ink-soft);
+    font-style:italic;
+  }
+  button.primary{
+    width:100%;
+    padding:13px;
+    margin-top:20px;
+    background:var(--pine);
+    color:white;
+    border:none;
+    border-radius:6px;
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:background .12s ease;
+  }
+  button.primary:hover{background:#255A4F;}
+  button.primary:disabled{background:#A9B8B3;cursor:not-allowed;}
+  #results{display:none;}
+  .result-header{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:16px;
+  }
+  .result-header h2{margin:0;}
+  .result-header .count{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+  }
+  .result-row{
+    padding:12px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .result-row:last-child{border-bottom:none;}
+  .result-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:6px;
+  }
+  .result-name{
+    font-family:'Lora',serif;
+    font-weight:600;
+    font-size:15px;
+  }
+  .result-pct{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--pine);
+  }
+  .bar-track{
+    height:6px;
+    background:var(--track);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .bar-fill{
+    height:100%;
+    background:var(--pine);
+    border-radius:3px;
+    transition:width .5s ease;
+  }
+  .rank-1 .bar-fill{background:var(--pine);}
+  .rank-other .bar-fill{background:#8FA79E;}
+  footer{
+    margin-top:32px;
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-align:center;
+    font-family:'IBM Plex Mono',monospace;
+  }
+  .config-note{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:11px;
+    color:var(--ink-soft);
+    background:var(--bg);
+    border:1px dashed var(--line);
+    border-radius:4px;
+    padding:8px 12px;
+    margin-top:24px;
+  }
+  .loading{
+    font-family:'IBM Plex Mono',monospace;
+    font-size:13px;
+    color:var(--ink-soft);
+  }
+  .error-box{
+    background:#FBEAEA;
+    border:1px solid #E3B0B0;
+    border-left:3px solid #B04A4A;
+    border-radius:4px;
+    padding:12px 14px;
+    font-size:13px;
+    color:#7A2E2E;
+    margin-top:12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Triage Assistant · Prototype</p>
+    <h1>Symptom Chart</h1>
+    <p class="sub">Select what you're experiencing to see ranked possible conditions from a demo machine learning model. This is not a diagnosis.</p>
+  </header>
+
+  <div class="notice">
+    <strong>Not a medical device.</strong> This tool is a learning project built on a small public demo dataset. It does not replace a clinical evaluation. If this were a real emergency, contact local emergency services immediately rather than using this tool.
+  </div>
+
+  <div class="card">
+    <h2>Symptoms</h2>
+    <p class="hint">Search and select all that apply</p>
+    <input type="text" id="search" placeholder="Type to search, e.g. fever, cough, fatigue…" autocomplete="off">
+    <div class="suggestions" id="suggestions"></div>
+    <div class="selected" id="selected">
+      <span class="empty-state">No symptoms selected yet</span>
+    </div>
+    <button class="primary" id="checkBtn" disabled>Check possible conditions</button>
+    <div id="errorBox"></div>
+  </div>
+
+  <div class="card" id="results">
+    <div class="result-header">
+      <h2>Ranked possibilities</h2>
+      <span class="count" id="resultCount"></span>
+    </div>
+    <div id="resultList"></div>
+  </div>
+
+  <div class="config-note">
+    API endpoint: <span id="apiUrlDisplay"></span> — edit <code>frontend/config.json</code> to point at your deployed backend.
+  </div>
+
+  <footer>SYMPTOM CHART v0.1 · EDUCATIONAL PROTOTYPE · NOT FOR CLINICAL USE</footer>
+</div>
+
+<script>
+  const FALLBACK_API_URL = window.location.origin && window.location.origin !== 'null'
+    ? window.location.origin
+    : 'http://localhost:8420';
+  let API_URL = FALLBACK_API_URL;
+  document.getElementById('apiUrlDisplay').textContent = API_URL;
+
+  let allSymptoms = [];
+  const selectedSymptoms = new Set();
+
+  const searchInput = document.getElementById('search');
+  const suggestionsEl = document.getElementById('suggestions');
+  const selectedEl = document.getElementById('selected');
+  const checkBtn = document.getElementById('checkBtn');
+  const resultsEl = document.getElementById('results');
+  const resultListEl = document.getElementById('resultList');
+  const resultCountEl = document.getElementById('resultCount');
+  const errorBoxEl = document.getElementById('errorBox');
+
+  function prettify(key){
+    return key.replace(/_/g, ' ');
+  }
+
+  async function loadApiUrl(){
+    try{
+      const res = await fetch('/config.json');
+      if(!res.ok){
+        return;
+      }
+      const config = await res.json();
+      if(config.apiUrl){
+        API_URL = config.apiUrl;
+        document.getElementById('apiUrlDisplay').textContent = API_URL;
+      }
+    }catch(e){
+      // Keep the fallback origin if the config file is missing or unavailable.
+    }
+  }
+
+  async function loadSymptoms(){
+    try{
+      const res = await fetch(`${API_URL}/symptoms`);
+      const data = await res.json();
+      allSymptoms = data.symptoms;
+    }catch(e){
+      errorBoxEl.innerHTML = `<div class="error-box">Couldn't reach the API at ${API_URL}. Make sure the backend is running and the URL above is correct.</div>`;
+    }
+  }
+
+  function renderSuggestions(query){
+    suggestionsEl.innerHTML = '';
+    if(!query){ return; }
+    const matches = allSymptoms
+      .filter(s => s.includes(query.toLowerCase().replace(/ /g,'_')) && !selectedSymptoms.has(s))
+      .slice(0, 12);
+    matches.forEach(s => {
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.textContent = prettify(s);
+      chip.onclick = () => addSymptom(s);
+      suggestionsEl.appendChild(chip);
+    });
+  }
+
+  function renderSelected(){
+    selectedEl.innerHTML = '';
+    if(selectedSymptoms.size === 0){
+      selectedEl.innerHTML = '<span class="empty-state">No symptoms selected yet</span>';
+      checkBtn.disabled = true;
+      return;
+    }
+    checkBtn.disabled = false;
+    selectedSymptoms.forEach(s => {
+      const tag = document.createElement('span');
+      tag.className = 'tag';
+      tag.innerHTML = `${prettify(s)} <button aria-label="Remove ${prettify(s)}">×</button>`;
+      tag.querySelector('button').onclick = () => removeSymptom(s);
+      selectedEl.appendChild(tag);
+    });
+  }
+
+  function addSymptom(s){
+    selectedSymptoms.add(s);
+    searchInput.value = '';
+    suggestionsEl.innerHTML = '';
+    resultsEl.style.display = 'none';
+    renderSelected();
+  }
+
+  function removeSymptom(s){
+    selectedSymptoms.delete(s);
+    resultsEl.style.display = 'none';
+    renderSelected();
+  }
+
+  searchInput.addEventListener('input', (e) => renderSuggestions(e.target.value));
+
+  checkBtn.addEventListener('click', async () => {
+    errorBoxEl.innerHTML = '';
+    checkBtn.disabled = true;
+    checkBtn.textContent = 'Checking…';
+    try{
+      const res = await fetch(`${API_URL}/predict`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ symptoms: Array.from(selectedSymptoms), top_k: 6 })
+      });
+      if(!res.ok){
+        const err = await res.json();
+        throw new Error(err.detail || 'Request failed');
+      }
+      const data = await res.json();
+      renderResults(data);
+    }catch(e){
+      errorBoxEl.innerHTML = `<div class="error-box">${e.message}</div>`;
+    }finally{
+      checkBtn.disabled = false;
+      checkBtn.textContent = 'Check possible conditions';
+    }
+  });
+
+  function renderResults(data){
+    resultListEl.innerHTML = '';
+    resultCountEl.textContent = `TOP ${data.results.length}`;
+    data.results.forEach((r, i) => {
+      const pct = Math.round(r.confidence * 100);
+      const row = document.createElement('div');
+      row.className = `result-row ${i === 0 ? 'rank-1' : 'rank-other'}`;
+      row.innerHTML = `
+        <div class="result-top">
+          <span class="result-name">${r.condition.trim()}</span>
+          <span class="result-pct">${pct}%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+      `;
+      resultListEl.appendChild(row);
+    });
+    resultsEl.style.display = 'block';
+    resultsEl.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  (async () => {
+    await loadApiUrl();
+    await loadSymptoms();
+  })();
+</script>
+</body>
+</html>
