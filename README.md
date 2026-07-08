@@ -55,7 +55,7 @@ scripts\start_app.bat
 ```
 
 ```bash
-cd medical-agent/backend
+cd backend
 pip install -r requirements.txt
 python -m uvicorn main:app --reload --port 8420
 ```
@@ -102,7 +102,7 @@ The proxy endpoint is `POST /github/infermedica/diagnosis` and expects the same
 ## Retraining the model
 
 ```bash
-cd medical-agent/model
+cd model
 pip install -r requirements.txt
 python3 train.py
 ```

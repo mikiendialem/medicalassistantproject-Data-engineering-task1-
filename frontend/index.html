@@ -300,7 +300,7 @@
 <script>
   const FALLBACK_API_URL = window.location.origin && window.location.origin !== 'null'
     ? window.location.origin
-    : 'http://localhost:8422';
+    : 'http://localhost:8420';
   let API_URL = FALLBACK_API_URL;
   document.getElementById('apiUrlDisplay').textContent = API_URL;
 
@@ -322,7 +322,7 @@
 
   async function loadApiUrl(){
     try{
-      const res = await fetch('/config.json');
+      const res = await fetch(`/config.json?ts=${Date.now()}`, { cache: 'no-store' });
       if(!res.ok){
         return;
       }
